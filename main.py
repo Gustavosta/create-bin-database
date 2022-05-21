@@ -28,11 +28,13 @@ def sync_insert_bin(i):
 
 async def create_database():
     bin_list = []
+    async with aiosqlite.connect('bins.db') as conn:
+        await conn.execute('CREATE TABLE IF NOT EXISTS bins(bin_number NUMERIC, bank TEXT, scheme TEXT, level TEXT, type TEXT, country TEXT);')
     try:
         for c in range(200000, 699999):
             bin_list.append(c)
             
-        with ThreadPoolExecutor(max_workers=10) as pool:
+        with ThreadPoolExecutor(max_workers=20) as pool:
             pool.map(sync_insert_bin, bin_list)
     except Exception as e:
         print('Erro ao criar banco de dados:', e)
