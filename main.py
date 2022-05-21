@@ -19,10 +19,14 @@ async def insert_bin(i):
         query = await conn.execute('SELECT bin_number FROM bins WHERE bin_number = ?', (i,))
         query = await query.fetchall()
         if query is None or query == [] or query == ():
-            bank, scheme, level, card_type, country = bin_checker(i)
-            if not bank == '' and not scheme == '' and not level == '' and not card_type == '' and not country == '':
+            check = bin_checker(i)
+            if not check == ('', '', '', '', ''):
+                bank, scheme, level, card_type, country = check
                 await conn.execute('INSERT INTO bins VALUES (?, ?, ?, ?, ?, ?)', (i, bank, scheme, level, card_type, country))
+                await conn.commit()
                 print(f'{i} | Banco: {bank if not "" else "N/A"} - Bandeira:{scheme if not "" else "N/A"} - Nível: {level if not "" else "N/A"} - Tipo: {card_type if not "" else "N/A"} - País: {country if not "" else "N/A"}')
+            else:
+                print(f'{i} | Bin não existente')
     except Exception as e:
         print('Erro ao inserir bin no banco de dados:', e)
 
@@ -37,12 +41,11 @@ async def create_database():
         for c in range(200000, 699999):
             bin_list.append(c)
             
-        with ThreadPoolExecutor(max_workers=20) as pool:
+        with ThreadPoolExecutor(max_workers=10) as pool:
             pool.map(sync_insert_bin, bin_list)
     except Exception as e:
         print('Erro ao criar banco de dados:', e)
         
-    await conn.commit()
     await conn.close()
 
 
@@ -53,3 +56,4 @@ if __name__ == '__main__':
     
     asyncio.run(conn.close())
     print('Banco de dados criado com sucesso!')
+
